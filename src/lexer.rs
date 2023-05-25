@@ -57,7 +57,7 @@ impl Lexer {
     }
 
     fn skip_whitespace(&mut self) {
-        self.consume_while(|c| c.is_ascii_whitespace());
+        self.consume_while(|c| c.is_whitespace());
     }
 
     fn skip_comment(&mut self) {
