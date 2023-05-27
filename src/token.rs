@@ -48,9 +48,9 @@ pub enum Token {
 
 #[derive(Debug, Clone, Copy)]
 pub struct WithSpan<T> {
-    value: T,
-    start_pos: u32,
-    end_pos: u32,
+    pub value: T,
+    pub start_pos: u32,
+    pub end_pos: u32,
 }
 
 impl<T> WithSpan<T>
@@ -67,5 +67,13 @@ where
 
     pub fn value(&self) -> T {
         self.value
+    }
+
+    pub fn start_pos(&self) -> usize {
+        self.start_pos as usize
+    }
+
+    pub fn end_pos(&self) -> usize {
+        self.end_pos as usize
     }
 }
