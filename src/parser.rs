@@ -38,7 +38,11 @@ impl Parser {
                 Token::True => Expr::Boolean(true),
                 Token::Number => Expr::Number(self.parse_number(self.cursor - 1)),
                 Token::String => Expr::String(self.parse_string(self.cursor - 1)),
-                Token::LeftParen => self.expr(),
+                Token::LeftParen => {
+                    let expr = self.expr();
+                    self.consume(Token::RightParen, "Expected ')' after expr.");
+                    expr
+                }
                 _ => {
                     eprintln!("Expected Primary Token: Found {:?}", token);
                     Expr::Nil
@@ -140,6 +144,14 @@ impl Parser {
             true
         } else {
             false
+        }
+    }
+
+    fn consume(&mut self, token: Token, msg: &str) {
+        if Some(token) == self.peek() {
+            self.advance();
+        } else {
+            eprintln!("{}", msg)
         }
     }
 
@@ -252,14 +264,18 @@ mod test {
 
     #[test]
     fn binary_unary() {
-        let left = parse("10 / -(2 * 5)");
+        let left = parse("10 / -(2 * 5) + 2");
         let right = Binary(
-            Box::new(Number(10.0)),
-            Slash,
-            Box::new(Unary(
-                UnaryOperator::Minus,
-                Box::new(Binary(Box::new(Number(2.0)), Star, Box::new(Number(5.0)))),
+            Box::new(Binary(
+                Box::new(Number(10.0)),
+                Slash,
+                Box::new(Unary(
+                    UnaryOperator::Minus,
+                    Box::new(Binary(Box::new(Number(2.0)), Star, Box::new(Number(5.0)))),
+                )),
             )),
+            Plus,
+            Box::new(Number(2.0)),
         );
 
         assert_eq!(left, right);
