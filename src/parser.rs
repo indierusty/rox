@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Ast, BinaryOperator, Expr, Stmt, UnaryOperator},
+    ast::{Ast, BinaryOperator, Expr, LogicalOperator, Stmt, UnaryOperator},
     lexer::tokenize_with_context,
     token::Token,
     token::WithSpan,
@@ -79,11 +79,12 @@ impl Parser {
         Ok(Stmt::Let(identifier_lexeme, initializer_expr))
     }
 
-    // Statement => ExprStmt | PrintStmt | Block;
+    // Statement => ExprStmt | IfStmt | PrintStmt | Block;
     fn statement(&mut self) -> Result<Stmt, ()> {
         if let Some(token) = self.peek() {
             match token {
                 Token::LeftBrace => self.block(),
+                Token::If => self.if_stmt(),
                 Token::Print => self.print_stmt(),
                 _ => self.expr_stmt(),
             }
@@ -94,7 +95,7 @@ impl Parser {
 
     // Block => Declarations* ;
     fn block(&mut self) -> Result<Stmt, ()> {
-        self.advance(); // advance '{' token
+        self.eat_token(Token::LeftBrace);
 
         let mut stmts = vec![];
 
@@ -106,8 +107,25 @@ impl Parser {
         Ok(Stmt::Block(stmts))
     }
 
+    // ifStmt    → "if" "(" expression ")" statement ( "else" statement )? ;
+    fn if_stmt(&mut self) -> Result<Stmt, ()> {
+        self.eat_token(Token::If);
+
+        self.consume(Token::LeftParen, "Expect '(' after if.")?;
+        let expr = self.expr()?;
+        self.consume(Token::RightParen, "Expect ')' after if condition.")?;
+
+        let then_branch = Box::new(self.statement()?);
+        let mut else_branch = None;
+        if self.match_token(Token::Else) {
+            else_branch = Some(Box::new(self.statement()?));
+        }
+
+        Ok(Stmt::If(expr, then_branch, else_branch))
+    }
+
     fn print_stmt(&mut self) -> Result<Stmt, ()> {
-        self.advance(); // advance Print token
+        self.eat_token(Token::Print); // advance Print token
 
         match self.expr() {
             Ok(expr) => {
@@ -229,9 +247,33 @@ impl Parser {
         Ok(left)
     }
 
+    fn and(&mut self) -> Result<Expr, ()> {
+        let mut left = self.equality()?;
+
+        while self.match_token(Token::And) {
+            let operator = parse_logical_operator(self.previous_token())?;
+            let right = self.equality()?;
+            left = Expr::Logical(Box::new(left), operator, Box::new(right));
+        }
+
+        Ok(left)
+    }
+
+    fn or(&mut self) -> Result<Expr, ()> {
+        let mut left = self.and()?;
+
+        while self.match_token(Token::Or) {
+            let operator = parse_logical_operator(self.previous_token())?;
+            let right = self.and()?;
+            left = Expr::Logical(Box::new(left), operator, Box::new(right));
+        }
+
+        Ok(left)
+    }
+
     fn assignment(&mut self) -> Result<Expr, ()> {
         // e.g [ a = "hari" ]
-        let left_expr = self.equality()?;
+        let left_expr = self.or()?;
 
         if self.match_token(Token::Equal) {
             let equal_index = self.cursor - 1; // for err reporting
@@ -250,7 +292,9 @@ impl Parser {
     }
 
     /* expression     → assignment;
-     * assignment     → IDENTIFIER '=' assignment | equality ;
+     * assignment     → IDENTIFIER '=' assignment | logic_or;
+     * logic_or       → logic_and ( "or" logic_and )* ;
+     * logic_and      → equality ( "and" equality )* ;
      * equality       → comparison ( ( "!=" | "==" ) comparison )* ;
      * comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
      * term           → factor ( ( "-" | "+" ) factor )* ;
@@ -267,13 +311,14 @@ impl Parser {
 
 /// Tokens
 impl Parser {
+    // TODO: improve synchronizing
     fn synchronize(&mut self) {
+        if self.previous_token() == Token::Semicolon {
+            return;
+        }
+
         while !self.is_at_end() {
             println!("IN Sync"); //////// REMOVE:
-            if self.previous_token() == Token::Semicolon {
-                return;
-            }
-
             if let Some(token) = self.peek() {
                 match token {
                     Token::For
@@ -290,6 +335,15 @@ impl Parser {
     }
 
     fn match_token(&mut self, token: Token) -> bool {
+        if Some(token) == self.peek() {
+            self.advance();
+            true
+        } else {
+            false
+        }
+    }
+
+    fn eat_token(&mut self, token: Token) -> bool {
         if Some(token) == self.peek() {
             self.advance();
             true
@@ -387,6 +441,17 @@ impl Parser {
         self.errors.push(format!(
             "\nParseErr: {msg}\nAtLine [{line_number}] AtToken[{token:?}]\n\n"
         ));
+    }
+}
+
+fn parse_logical_operator(token: Token) -> Result<LogicalOperator, ()> {
+    match token {
+        Token::Or => Ok(LogicalOperator::Or),
+        Token::And => Ok(LogicalOperator::And),
+        _ => {
+            eprintln!("Err parsing logical operator from token");
+            Err(())
+        }
     }
 }
 

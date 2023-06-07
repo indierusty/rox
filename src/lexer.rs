@@ -113,8 +113,8 @@ impl<'a> Lexer<'a> {
         }
         tokens.push(WithSpan::new(
             Token::Eof,
-            self.cursor as u32,
-            self.cursor as u32,
+            self.cursor as u32 - 1,
+            self.cursor as u32 - 1,
         ));
         tokens
     }

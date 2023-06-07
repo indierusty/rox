@@ -1,0 +1,15 @@
+if (10 == 10) {
+	print 10;
+}
+
+let name = "Rusty";
+if (name != "Dusty") {
+	print name;
+}
+
+if (name == "Rusty") {
+	let name = "RustyDusty";
+	print name;
+}
+
+print "Well done " + name + "!";

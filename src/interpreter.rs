@@ -1,4 +1,4 @@
-use crate::ast::{BinaryOperator, Expr, Stmt, UnaryOperator};
+use crate::ast::{BinaryOperator, Expr, LogicalOperator, Stmt, UnaryOperator};
 use crate::environment::Environment;
 use crate::parser::parse;
 use crate::value::Value;
@@ -29,6 +29,7 @@ impl Interpreter {
         match stmt {
             Stmt::Block(stmts) => self.block(stmts),
             Stmt::Expr(expr) => self.expr_stmt(expr),
+            Stmt::If(expr, then_stmt, else_stmt) => self.if_stmt(expr, then_stmt, else_stmt),
             Stmt::Print(expr) => self.print_stmt(expr),
             Stmt::Let(i, e) => self.let_stmt(i, e),
         }
@@ -50,6 +51,22 @@ impl Interpreter {
 
     fn expr_stmt(&mut self, expr: Expr) -> Result<(), String> {
         self.evaluate(expr)?;
+        Ok(())
+    }
+
+    fn if_stmt(
+        &mut self,
+        expr: Expr,
+        then_stmt: Box<Stmt>,
+        else_stmt: Option<Box<Stmt>>,
+    ) -> Result<(), String> {
+        if self.evaluate(expr)? == Value::Bool(true) {
+            self.run(*then_stmt)?;
+        } else {
+            if let Some(stmt) = else_stmt {
+                self.run(*stmt)?;
+            }
+        }
         Ok(())
     }
 
@@ -75,6 +92,7 @@ impl Interpreter {
     fn evaluate(&mut self, expr: Expr) -> Result<Value, String> {
         match expr {
             Expr::Binary(l, o, r) => self.binary(l, o, r),
+            Expr::Logical(l, o, r) => self.logical(l, o, r),
             Expr::Unary(o, expr) => self.unary(o, expr),
             Expr::Number(number) => Ok(Value::Num(number)),
             Expr::Boolean(value) => Ok(Value::Bool(value)),
@@ -92,6 +110,30 @@ impl Interpreter {
 
     fn variable(&mut self, identifier: String) -> Result<Value, String> {
         self.envs.get_var(identifier)
+    }
+
+    fn logical(
+        &mut self,
+        left: Box<Expr>,
+        op: LogicalOperator,
+        right: Box<Expr>,
+    ) -> Result<Value, String> {
+        let left = self.evaluate(*left)?;
+
+        match op {
+            LogicalOperator::And => {
+                if left == Value::Bool(false) {
+                    return Ok(left);
+                }
+            }
+            LogicalOperator::Or => {
+                if left == Value::Bool(true) {
+                    return Ok(left);
+                }
+            }
+        }
+
+        self.evaluate(*right)
     }
 
     fn binary(

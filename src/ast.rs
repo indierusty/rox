@@ -27,6 +27,7 @@ pub enum LogicalOperator {
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
     Binary(Box<Expr>, BinaryOperator, Box<Expr>),
+    Logical(Box<Expr>, LogicalOperator, Box<Expr>),
     Unary(UnaryOperator, Box<Expr>),
     Number(f64),
     Boolean(bool),
@@ -41,6 +42,7 @@ pub enum Expr {
 pub enum Stmt {
     Block(Vec<Stmt>),
     Expr(Expr),
+    If(Expr, Box<Stmt>, Option<Box<Stmt>>),
     Let(String, Option<Expr>),
     Print(Expr),
 }

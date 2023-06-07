@@ -1,0 +1,31 @@
+if (false and true) {
+	print "No";
+}
+
+if (true and false) {
+	print "No";
+}
+
+if (true and true) {
+	print "Yes";
+}
+
+if (false or false) {
+	print "No";
+}
+
+if (false or true) {
+	print "Yes";
+}
+
+if (true or true) {
+	print "Yes";
+}
+
+if (10 == 10 and true) {
+	print "Yes";
+}
+
+if (10 == 1 or "a" == "a") {
+	print "Yes";
+}

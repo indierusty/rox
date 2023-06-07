@@ -1,0 +1,13 @@
+if (100 == 1) {
+	print "No";
+} else {
+	print "Yes";
+}
+
+if (100 == 100) {
+	if (false) {
+		print "No";
+	} else {
+		print "Yes";
+	}
+}
