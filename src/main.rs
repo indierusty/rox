@@ -1,5 +1,6 @@
-use rox::interpreter::interpret;
+use rox::interpreter::Interpreter;
 
 fn main() {
-    interpret("10 / -(2 * 5) + 2");
+    let file_paths: Vec<_> = std::env::args().collect();
+    Interpreter::new().interpret(&std::fs::read_to_string(&file_paths[1]).unwrap());
 }

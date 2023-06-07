@@ -1,0 +1,8 @@
+print "Hello";
+
+let name = "Priyanshu";
+print "Hello" + " " + name;
+
+let ten = 10;
+let five = 5;
+print 100 * (100 - ten * five);

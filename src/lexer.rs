@@ -1,16 +1,16 @@
 use crate::token::Token;
 use crate::token::WithSpan;
 
-pub struct Lexer {
-    source: Vec<char>,
+pub struct Lexer<'a> {
+    source: &'a [char],
     start_pos: usize,
     cursor: usize, // index of next char will be scanned
 }
 
-impl Lexer {
-    pub fn new(source: &str) -> Self {
+impl<'a> Lexer<'a> {
+    pub fn new(source: &'a [char]) -> Self {
         Self {
-            source: source.chars().collect(),
+            source,
             start_pos: 0,
             cursor: 0,
         }
@@ -120,7 +120,7 @@ impl Lexer {
     }
 }
 
-impl Lexer {
+impl<'a> Lexer<'a> {
     fn is_at_end(&self) -> bool {
         self.cursor == self.source.len()
     }
@@ -189,7 +189,7 @@ impl Lexer {
     }
 }
 
-pub fn tokenize_with_context(buf: &str) -> Vec<WithSpan<Token>> {
+pub fn tokenize_with_context(buf: &[char]) -> Vec<WithSpan<Token>> {
     let mut t = Lexer::new(buf);
     t.tokenize_with_context()
 }
@@ -200,7 +200,8 @@ mod tests {
     use super::tokenize_with_context;
 
     fn tokenize(src: &str) -> Vec<Token> {
-        tokenize_with_context(src)
+        let src: Vec<char> = src.chars().collect();
+        tokenize_with_context(&src[..])
             .iter()
             .map(|t| t.value())
             .collect()

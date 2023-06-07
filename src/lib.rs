@@ -1,5 +1,8 @@
-pub mod ast;
 pub mod interpreter;
-pub mod lexer;
-pub mod parser;
-pub mod token;
+
+mod ast;
+mod environment;
+mod lexer;
+mod parser;
+mod token;
+mod value;

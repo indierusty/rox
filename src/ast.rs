@@ -33,4 +33,16 @@ pub enum Expr {
     Nil,
     String(String),
     Variable(String),
+    // Assign(var_name, expr_to_assign)
+    Assignment(String, Box<Expr>),
 }
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum Stmt {
+    Block(Vec<Stmt>),
+    Expr(Expr),
+    Let(String, Option<Expr>),
+    Print(Expr),
+}
+
+pub type Ast = Vec<Stmt>;
